@@ -13,12 +13,11 @@ class ParseError(FlyInError):
         reason: Human readable explanation of the problem.
     """
 
-
-def __init__(self, line_no: int, reason: str) -> None:
-    """Store the line number and reason and build the message"""
-    self.line_no: int = line_no
-    self.reason: str = reason
-    super().__init__(f"line {line_no}: {reason}")
+    def __init__(self, line_no: int, reason: str) -> None:
+        """Store the line number and reason and build the message"""
+        self.line_no: int = line_no
+        self.reason: str = reason
+        super().__init__(f"line {line_no}: {reason}")
 
 
 class NoPathError(FlyInError):
