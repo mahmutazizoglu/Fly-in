@@ -3,6 +3,7 @@
 import sys
 
 from flyin.errors import FlyInError
+from flyin.parser import MapParser
 
 
 def main(argv: list[str]) -> int:
@@ -11,8 +12,12 @@ def main(argv: list[str]) -> int:
         print(f"usage: {argv[0]} <map_file>", file=sys.stderr)
         return 1
     try:
-        # Parser, scheduler and simulation are added soon.
-        print(f"Fly-in: map file '{argv[1]}' received (wip)")
+        data = MapParser(argv[1]).parse()
+        print(f"{data.nb_drones} drones, {len(data.zones)} zones, "
+              f"start={data.start}, end={data.end}")
+        for zone in data.values():
+            print(f" {zone.name:<12} {zone.zone_type.value:<10} "
+                  f"max={zone.max_drones} color={zone.color}")
     except FlyInError as err:
         print(f"Error: {err}", file=sys.stderr)
         return 1
