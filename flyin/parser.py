@@ -13,7 +13,7 @@ class MapParser:
 
     Usage::
 
-        data = MapParser("maps/example,txt").parse()
+        data = MapParser("maps/example.txt").parse()
     """
 
     def __init__(self, path: str) -> None:
@@ -49,7 +49,7 @@ class MapParser:
     def _parse_line(self, line_no: int, line: str) -> None:
         """Send one meaningful line to the right handler."""
         if ":" not in line:
-            raise ParseError(line_no, f"expected 'keyword: ...', got '{line}")
+            raise ParseError(line_no, f"expected 'keyword: ...', got '{line}'")
         keyword, rest = line.split(":", 1)
         keyword, rest = keyword.strip(), rest.strip()
         if not self._seen_nb_drones and keyword != "nb_drones":
@@ -59,11 +59,11 @@ class MapParser:
         elif keyword in ("start_hub", "end_hub", "hub"):
             self._parse_hub(line_no, keyword, rest)
         elif keyword == "connection":
-            self._parse_commection(line_no, rest)
+            self._parse_connection(line_no, rest)
         else:
             raise ParseError(line_no, f"unknown keyword '{keyword}'")
 
-    def _parse_nb_drone(self, line_no: int, rest: str) -> None:
+    def _parse_nb_drones(self, line_no: int, rest: str) -> None:
         """Handle 'nb_drones: <positive_integer>'."""
         if self._seen_nb_drones:
             raise ParseError(line_no, "nb_drones defined twice")
@@ -75,7 +75,7 @@ class MapParser:
         head, meta = self._split_metadata(line_no, rest)
         parts: list[str] = head.split()
         if len(parts) != 3:
-            raise ParseError(line_no, "expacted '<name> <x> <y> [metadata]'")
+            raise ParseError(line_no, "expected '<name> <x> <y> [metadata]'")
         name, x_text, y_text = parts
         if "-" in name:
             raise ParseError(line_no, f"zone name '{name}' contains a dash")
