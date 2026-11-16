@@ -10,9 +10,9 @@ ZONE_KEYS: frozenset[str] = frozenset({"zone", "color", "max_drones"})
 
 class MapParser:
     """Parse a map file line by line.
-    
+
     Usage::
-    
+
         data = MapParser("maps/example,txt").parse()
     """
 
@@ -24,8 +24,8 @@ class MapParser:
 
     def parse(self) -> MapData:
         """Read the whole file and return the parsed data.
-        
-        
+
+
         Raises:
             FlyInError: if the file cannot be opened.
             ParseError: on the first invalid line.

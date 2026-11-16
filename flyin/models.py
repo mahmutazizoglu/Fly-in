@@ -98,7 +98,7 @@ class Connection:
 @dataclass
 class MapData:
     """Everything read from a map file, before building the graph.
-    
+
     Attributes:
         nb_drones: Number of drones to route (positive).
         zones: Zone name -> Zone, in file order.
