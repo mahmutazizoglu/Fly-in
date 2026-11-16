@@ -1,6 +1,6 @@
 """Plain data models describing the zone network."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -93,3 +93,22 @@ class Connection:
         if zone_name == self.b:
             return self.a
         raise ValueError(f"{zone_name} is not part of {self.name}")
+
+
+@dataclass
+class MapData:
+    """Everything read from a map file, before building the graph.
+    
+    Attributes:
+        nb_drones: Number of drones to route (positive).
+        zones: Zone name -> Zone, in file order.
+        connections: Every connection, in file order.
+        start: Name of the start hub (None until it is read).
+        end: Name of the end hub (None until it is read).
+        """
+
+    nb_drones: int = 0
+    zones: dict[str, Zone] = field(default_factory=dict)
+    connections: list[Connection] = field(default_factory=list)
+    start: Optional[str] = None
+    end: Optional[str] = None
