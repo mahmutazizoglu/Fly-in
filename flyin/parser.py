@@ -7,6 +7,7 @@ from flyin.models import MapData, Zone, ZoneType
 
 ZONE_KEYS: frozenset[str] = frozenset({"zone", "color", "max_drones"})
 
+
 class MapParser:
     """Parse a map file line by line.
     
@@ -90,4 +91,72 @@ class MapParser:
         is_start: bool = keyword == "start_hub"
         is_end: bool = keyword == "end_hub"
         max_drones: int = 1
-        
+        if "max_drones" in meta and not (is_start or is_end):
+            max_drones = self._positive_int(
+                line_no, "max_drones", meta["max_drones"])
+
+        if is_start:
+            if self.data.start is not None:
+                raise ParseError(line_no, "start_hub defined twice")
+            self.data.start = name
+        if is_end:
+            if self.data.end is not None:
+                raise ParseError(line_no, "end_hub defined twice")
+            self.data.end = name
+
+        self.data.zones[name] = Zone(
+            name=name, x=x, y=y, zone_type=zone_type,
+            color=meta.get("color"), max_drones=max_drones,
+            is_start=is_start, is_end=is_end)
+
+    def _parse_connection(self, line_no: int, rest: str) -> None:
+        """Handle 'connection: a-b [metadata]'. """
+
+    @staticmethod
+    def _split_metadata(line_no: int, text: str) -> tuple[str, dict[str, str]]:
+        """split head [k=v k=v] into ('head', {'k': 'v',...}).
+
+        The bracket block is optional, but if present it must be the
+        last thing on the line and contain only key=value tokens.
+        """
+        if "[" not in text and "]" not in text:
+            return text, {}
+        start: int = text.find("[")
+        if (start == -1 or not text.endswith("]")
+                or text.count("[") != 1 or text.count("]") != 1):
+            raise ParseError(line_no, "malformed metadata block '[...]'")
+        meta: dict[str, str] = {}
+        for token in text[start + 1:-1].split():
+            key, sep, value = token.partition("=")
+            if not sep or not key or not value:
+                raise ParseError(line_no, f"bad metadata '{token}'")
+            if key in meta:
+                raise ParseError(line_no, f"metadata '{key}' given twice")
+            meta[key] = value
+        return text[:start].strip(), meta
+
+    @staticmethod
+    def _zone_type(line_no: int, value: Optional[str]) -> ZoneType:
+        """Convert 'restricted' -> ZoneType.RESTRICTED (default normal)."""
+        if value is None:
+            return ZoneType.NORMAL
+        try:
+            return ZoneType(value)
+        except ValueError:
+            raise ParseError(line_no, f"invalid zone type '{value}'")
+
+    @staticmethod
+    def _int(line_no: int, what: str, text: str) -> int:
+        """convert text to integer or raise a ParseError naming the field."""
+        try:
+            return int(text)
+        except ValueError:
+            raise ParseError(line_no, f"{what} must be an integer: '{text}'")
+
+    @classmethod
+    def _positive_int(cls, line_no: int, what: str, text: str) -> int:
+        """like _int but value must also be > 0."""
+        value: int = cls._int(line_no, what, text)
+        if value <= 0:
+            raise ParseError(line_no, f"{what} must be positive, got {value}")
+        return value
