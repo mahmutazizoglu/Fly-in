@@ -142,7 +142,7 @@ class MapParser:
         capacity: int = 1
         if "max_link_capacity" in meta:
             capacity = self._positive_int(
-                line_no, "max_line_capacity", meta["max_link_capacity"])
+                line_no, "max_link_capacity", meta["max_link_capacity"])
 
         link: Connection = Connection(a=a, b=b, max_link_capacity=capacity)
         if link.key in self._link_keys:

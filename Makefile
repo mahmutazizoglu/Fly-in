@@ -2,7 +2,7 @@ PYTHON	= python3
 MAIN 	= fly_in.py
 MAP		?= maps/example.txt
 
-.PHONY: install run debug clean lint lint-strict test
+.PHONY: install run debug clean lint lint-strict test errors
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
