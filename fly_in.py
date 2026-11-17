@@ -18,6 +18,9 @@ def main(argv: list[str]) -> int:
         for zone in data.zones.values():
             print(f" {zone.name:<12} {zone.zone_type.value:<10} "
                   f"max={zone.max_drones} color={zone.color}")
+        print(f"{len(data.connections)} connections")
+        for link in data.connections:
+            print(f" {link.name:<22} capacity={link.max_link_capacity}")
     except FlyInError as err:
         print(f"Error: {err}", file=sys.stderr)
         return 1

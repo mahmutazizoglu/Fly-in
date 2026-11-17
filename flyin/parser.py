@@ -3,9 +3,10 @@
 from typing import Optional
 
 from flyin.errors import FlyInError, ParseError
-from flyin.models import MapData, Zone, ZoneType
+from flyin.models import Connection, MapData, Zone, ZoneType
 
 ZONE_KEYS: frozenset[str] = frozenset({"zone", "color", "max_drones"})
+LINK_KEYS: frozenset[str] = frozenset({"max_link_capacity"})
 
 
 class MapParser:
@@ -21,6 +22,7 @@ class MapParser:
         self.path: str = path
         self.data: MapData = MapData()
         self._seen_nb_drones: bool = False
+        self._link_keys: set[frozenset[str]] = set()
 
     def parse(self) -> MapData:
         """Read the whole file and return the parsed data.
@@ -39,7 +41,17 @@ class MapParser:
             line: str = self._strip_comment(raw)
             if line:
                 self._parse_line(line_no, line)
+        self._check_complete(max(len(lines), 1))
         return self.data
+
+    def _check_complete(self, last_line: int) -> None:
+        """Checks that can only be done once the whole file is read."""
+        if not self._seen_nb_drones:
+            raise ParseError(last_line, "empty map: 'nb_drones' is missing")
+        if self.data.start is None:
+            raise ParseError(last_line, "no start_hub defined")
+        if self.data.end is None:
+            raise ParseError(last_line, "no end_hub defined")
 
     @staticmethod
     def _strip_comment(raw: str) -> str:
@@ -110,7 +122,33 @@ class MapParser:
             is_start=is_start, is_end=is_end)
 
     def _parse_connection(self, line_no: int, rest: str) -> None:
-        """Handle 'connection: a-b [metadata]'. """
+        """Handle 'connection: a-b [max_link_capacity=N]'."""
+        head, meta = self._split_metadata(line_no, rest)
+        if len(head.split()) != 1:
+            raise ParseError(line_no, "expected '<zone1>-<zone2> [metadata]'")
+        names: list[str] = head.split("-")
+        if len(names) != 2 or not names[0] or not names[1]:
+            raise ParseError(line_no, f"bad connection '{head}'")
+        a, b = names
+        for name in (a, b):
+            if name not in self.data.zones:
+                raise ParseError(line_no, f"unknown zone '{name}'")
+        if a == b:
+            raise ParseError(line_no, f"zone '{a}' connected to itself")
+
+        for key in meta:
+            if key not in LINK_KEYS:
+                raise ParseError(line_no, f"unknown link metadata '{key}'")
+        capacity: int = 1
+        if "max_link_capacity" in meta:
+            capacity = self._positive_int(
+                line_no, "max_line_capacity", meta["max_link_capacity"])
+
+        link: Connection = Connection(a=a, b=b, max_link_capacity=capacity)
+        if link.key in self._link_keys:
+            raise ParseError(line_no, f"duplicate connection '{head}'")
+        self._link_keys.add(link.key)
+        self.data.connections.append(link)
 
     @staticmethod
     def _split_metadata(line_no: int, text: str) -> tuple[str, dict[str, str]]:
