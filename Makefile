@@ -27,3 +27,8 @@ lint-strict:
 
 test:
 	$(PYTHON) -m pytest -q tests
+
+errors:
+	@for f in maps/errors/*.txt; do \
+		echo "== $$f"; $(PYTHON) $(MAIN) $$f 2>&1 || true; \
+	done
